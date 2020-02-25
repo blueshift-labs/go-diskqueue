@@ -46,7 +46,7 @@ func (l LogLevel) String() string {
 }
 
 type Interface interface {
-	Put([]byte) error
+	Put([]byte, []byte) error
 	ReadChan() chan []byte // this is expected to be an *unbuffered* channel
 	Close() error
 	Delete() error
@@ -146,7 +146,7 @@ func (d *diskQueue) ReadChan() chan []byte {
 }
 
 // Put writes a []byte to the queue
-func (d *diskQueue) Put(data []byte) error {
+func (d *diskQueue) Put(_key, data []byte) error {
 	d.RLock()
 	defer d.RUnlock()
 

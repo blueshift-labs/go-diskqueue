@@ -92,7 +92,7 @@ func TestDiskQueue(t *testing.T) {
 	Equal(t, int64(0), dq.Depth())
 
 	msg := []byte("test")
-	err = dq.Put(msg)
+	err = dq.Put(nil, msg)
 	Nil(t, err)
 	Equal(t, int64(1), dq.Depth())
 
@@ -116,7 +116,7 @@ func TestDiskQueueRoll(t *testing.T) {
 	Equal(t, int64(0), dq.Depth())
 
 	for i := 0; i < 10; i++ {
-		err := dq.Put(msg)
+		err := dq.Put(nil, msg)
 		Nil(t, err)
 		Equal(t, int64(i+1), dq.Depth())
 	}
@@ -146,7 +146,7 @@ func TestDiskQueueEmpty(t *testing.T) {
 	Equal(t, int64(0), dq.Depth())
 
 	for i := 0; i < 100; i++ {
-		err := dq.Put(msg)
+		err := dq.Put(nil, msg)
 		Nil(t, err)
 		Equal(t, int64(i+1), dq.Depth())
 	}
@@ -177,7 +177,7 @@ func TestDiskQueueEmpty(t *testing.T) {
 	Equal(t, dq.(*diskQueue).readFileNum, dq.(*diskQueue).nextReadFileNum)
 
 	for i := 0; i < 100; i++ {
-		err := dq.Put(msg)
+		err := dq.Put(nil, msg)
 		Nil(t, err)
 		Equal(t, int64(i+1), dq.Depth())
 	}
@@ -213,7 +213,7 @@ func TestDiskQueueCorruption(t *testing.T) {
 
 	msg := make([]byte, 123) // 127 bytes per message, 8 (1016 bytes) messages per file
 	for i := 0; i < 25; i++ {
-		dq.Put(msg)
+		dq.Put(nil, msg)
 	}
 
 	Equal(t, int64(25), dq.Depth())
@@ -230,7 +230,7 @@ func TestDiskQueueCorruption(t *testing.T) {
 	dqFn = dq.(*diskQueue).fileName(3)
 	os.Truncate(dqFn, 100)
 
-	dq.Put(msg) // in 5th file
+	dq.Put(nil, msg) // in 5th file
 
 	Equal(t, msg, <-dq.ReadChan())
 
@@ -238,8 +238,8 @@ func TestDiskQueueCorruption(t *testing.T) {
 	dq.(*diskQueue).writeFile.Write([]byte{0, 0, 0, 0})
 
 	// force a new 6th file - put into 5th, then readOne errors, then put into 6th
-	dq.Put(msg)
-	dq.Put(msg)
+	dq.Put(nil, msg)
+	dq.Put(nil, msg)
 
 	Equal(t, msg, <-dq.ReadChan())
 }
@@ -289,7 +289,7 @@ func TestDiskQueueSyncAfterRead(t *testing.T) {
 	defer dq.Close()
 
 	msg := make([]byte, 1000)
-	dq.Put(msg)
+	dq.Put(nil, msg)
 
 	for i := 0; i < 10; i++ {
 		d := readMetaDataFile(dq.(*diskQueue).metaDataFileName(), 0)
@@ -306,7 +306,7 @@ func TestDiskQueueSyncAfterRead(t *testing.T) {
 	panic("fail")
 
 next:
-	dq.Put(msg)
+	dq.Put(nil, msg)
 	<-dq.ReadChan()
 
 	for i := 0; i < 10; i++ {
@@ -358,7 +358,7 @@ func TestDiskQueueTorture(t *testing.T) {
 				case <-writeExitChan:
 					return
 				default:
-					err := dq.Put(msg)
+					err := dq.Put(nil, msg)
 					if err == nil {
 						atomic.AddInt64(&depth, 1)
 					}
@@ -458,7 +458,7 @@ func benchmarkDiskQueuePut(size int64, b *testing.B) {
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
-		err := dq.Put(data)
+		err := dq.Put(nil, data)
 		if err != nil {
 			panic(err)
 		}
@@ -607,7 +607,7 @@ func benchmarkDiskQueueGet(size int64, b *testing.B) {
 	b.SetBytes(size)
 	data := make([]byte, size)
 	for i := 0; i < b.N; i++ {
-		dq.Put(data)
+		dq.Put(nil, data)
 	}
 	b.StartTimer()
 
